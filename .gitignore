@@ -36,3 +36,9 @@ desktop.ini
 
 # Logs locais
 *.log
+
+# Certificados e chaves de assinatura (nunca versionar)
+certs/
+*.pfx
+*.key
+*.crt

@@ -1,0 +1,30 @@
+#include <winver.h>
+
+1 ICON "../../assets/icon.ico"
+1 24 "dosprintgo.manifest"
+
+1 VERSIONINFO
+FILEVERSION 1,0,0,0
+PRODUCTVERSION 1,0,0,0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "041604B0"
+    BEGIN
+      VALUE "CompanyName", "Adonai"
+      VALUE "FileDescription", "DosPrintGo - Redirecionador LPT para impressoras termicas IP"
+      VALUE "FileVersion", "1.0.0.0"
+      VALUE "InternalName", "DosPrintGo"
+      VALUE "OriginalFilename", "DosPrintGo.exe"
+      VALUE "ProductName", "DosPrintGo"
+      VALUE "ProductVersion", "1.0.0.0"
+      VALUE "LegalCopyright", "Adonai"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0416, 1200
+  END
+END
