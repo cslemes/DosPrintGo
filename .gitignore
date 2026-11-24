@@ -1,0 +1,38 @@
+# Binários compilados
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+DosPrintGo
+DosPrintGo_x86
+bin/
+dist/
+
+# Spool e arquivos temporários de impressão
+spool/
+*.SPL
+*.spl
+SPOOL*.SPL
+PRN*.SPL
+
+# Arquivos de teste e cobertura
+*.test
+*.out
+coverage.html
+profile.pprof
+
+# IDEs e editores
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs locais
+*.log

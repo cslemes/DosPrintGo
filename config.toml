@@ -1,0 +1,29 @@
+# DosPrintGo - Configuração de Redirecionamento de Portas LPT
+# Gerenciado via Viper (suporte a recarga dinâmica e Web GUI)
+
+spool_dir = "C:\\ProgramData\\DosPrintGo\\spool"
+http_port = 8989
+
+[[mappings]]
+port = "LPT1"
+target_type = "tcp"
+target = "192.168.1.150:9100"
+description = "Zebra ZPL - Etiquetas Gôndola Consinco"
+timeout_ms = 5000
+inactivity_ms = 300
+
+[[mappings]]
+port = "LPT2"
+target_type = "tcp"
+target = "192.168.1.151:9100"
+description = "Argox PPLA/PPLB - Etiquetas Recebimento/Expedição"
+timeout_ms = 5000
+inactivity_ms = 300
+
+[[mappings]]
+port = "LPT3"
+target_type = "tcp"
+target = "192.168.1.152:9100"
+description = "Térmica Não Fiscal - Cupom/Romaneio"
+timeout_ms = 5000
+inactivity_ms = 300

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DosPrintGo - Painel de Controle</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 24px; min-height: 100vh; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .logo-group h1 { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .badge-status { font-size: 12px; background: rgba(16, 185, 129, 0.15); color: var(--success); padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 600; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+    .stat-card h3 { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .stat-card p { font-size: 22px; font-weight: 700; word-break: break-all; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 24px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .card-header h2 { font-size: 18px; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+    th { font-size: 12px; color: var(--text-muted); text-transform: uppercase; }
+    tr:last-child td { border-bottom: none; }
+    .btn { padding: 8px 14px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: background 0.15s; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-secondary { background: #475569; color: white; }
+    .btn-secondary:hover { background: #334155; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    .btn-group { display: flex; gap: 8px; }
+    .tag-port { background: #1e3a8a; color: #93c5fd; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-family: monospace; }
+    .tag-tcp { background: #064e3b; color: #6ee7b7; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 100; }
+    .modal.active { display: flex; }
+    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 12px; width: 500px; max-width: 95%; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
+    .form-control { width: 100%; padding: 10px 12px; background: #0f172a; border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 14px; }
+    .form-control:focus { outline: none; border-color: var(--primary); }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: #1e293b; border: 1px solid var(--border); padding: 14px 20px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.4); display: none; z-index: 1000; font-size: 14px; }
+    .toast.show { display: block; }
+    .toast.success { border-color: var(--success); color: var(--success); }
+    .toast.error { border-color: var(--danger); color: var(--danger); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-group">
+        <h1>🖨️ DosPrintGo</h1>
+        <p style="color: var(--text-muted); font-size: 13px;">Emulador de Portas LPT para Impressoras Térmicas IP (Zebra, Argox, ESC/POS)</p>
+      </div>
+      <div>
+        <span class="badge-status">● Serviço Operacional</span>
+      </div>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Portas Mapeadas</h3>
+        <p id="stat-ports">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Diretório de Spool</h3>
+        <p id="stat-spool" style="font-size: 13px; font-family: monospace; margin-top: 6px; color: #38bdf8;">-</p>
+      </div>
+      <div class="stat-card">
+        <h3>Arquivo Config (Viper)</h3>
+        <p id="stat-config" style="font-size: 13px; font-family: monospace; margin-top: 6px; color: #a78bfa;">-</p>
+    </div>
+
+    <div class="card" id="card-service-control">
+      <div class="card-header">
+        <div>
+          <h2>⚙️ Serviço do Windows</h2>
+          <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Gerencie o registro e execução em segundo plano no Windows (boot automático)</p>
+        </div>
+        <div>
+          <span class="badge-status" id="badge-svc-status">Verificando...</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; padding-top: 4px;">
+        <div style="font-size: 14px; color: var(--text-muted);">
+          Status no SCM: <strong id="svc-status-text" style="color: var(--text);">Consultando...</strong>
+        </div>
+        <div class="btn-group" id="svc-button-group">
+          <button class="btn btn-sm btn-secondary" disabled>Carregando...</button>
+        </div>
+      </div>
+    </div>
+      <div class="card-header">
+        <h2>Mapeamento de Portas LPT</h2>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="openAddModal()">➕ Adicionar Porta</button>
+          <button class="btn btn-secondary" onclick="reloadService()">🔄 Recarregar Serviço</button>
+        </div>
+      </div>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Porta</th>
+              <th>Tipo</th>
+              <th>Destino (IP:Porta)</th>
+              <th>Descrição</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="table-mappings">
+            <tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Adicionar / Editar -->
+  <div class="modal" id="modal-mapping">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">Configurar Porta LPT</h3>
+        <button style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer;" onclick="closeModal('modal-mapping')">&times;</button>
+      </div>
+      <form id="form-mapping" onsubmit="saveMapping(event)">
+        <input type="hidden" id="edit-index" value="-1">
+        <div class="form-group">
+          <label>Porta LPT (Ex: LPT1, LPT2... LPT9)</label>
+          <input type="text" id="m-port" class="form-control" required placeholder="LPT1" style="text-transform: uppercase;">
+        </div>
+        <div class="form-group">
+          <label>Tipo de Envio</label>
+          <select id="m-type" class="form-control">
+            <option value="tcp">TCP Direto (IP:Porta - Padrão 9100)</option>
+            <option value="windows_printer">Spooler do Windows (Nome da Impressora)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Destino (Ex: 192.168.1.150:9100 ou Nome da Fila Windows)</label>
+          <input type="text" id="m-target" class="form-control" required placeholder="192.168.1.150:9100">
+        </div>
+        <div class="form-group">
+          <label>Descrição Amigável</label>
+          <input type="text" id="m-desc" class="form-control" placeholder="Zebra ZPL - Etiquetas Gôndola">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-mapping')">Cancelar</button>
+          <button type="submit" class="btn btn-success">Salvar Porta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Teste de Impressão -->
+  <div class="modal" id="modal-test">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>⚡ Teste de Impressão Imediato</h3>
+        <button style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer;" onclick="closeModal('modal-test')">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>Porta Selecionada</label>
+        <input type="text" id="test-port" class="form-control" readonly>
+      </div>
+      <div class="form-group">
+        <label>Tipo de Etiqueta / Comando</label>
+        <select id="test-label-type" class="form-control" onchange="updateSamplePayload()">
+          <option value="zpl">Zebra ZPL (Etiqueta com Código de Barras)</option>
+          <option value="ppla">Argox PPLA (Etiqueta com Código de Barras)</option>
+          <option value="escpos">Térmica Cupom ESC/POS (Texto com Corte)</option>
+          <option value="custom">Comando Personalizado (RAW)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Comando RAW a ser enviado</label>
+        <textarea id="test-payload" class="form-control" rows="5" style="font-family: monospace; font-size: 12px;"></textarea>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-test')">Fechar</button>
+        <button type="button" class="btn btn-primary" onclick="sendTestPrint()">Imprimir Teste Agora</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Mensagem</div>
+
+  <script>
+    let activeConfig = { mappings: [] };
+
+    const samples = {
+      zpl: "^XA\n^FO50,50^A0N,40,40^FDTESTE ZEBRA DOSPRINTGO^FS\n^FO50,110^BY3^BCN,70,Y,N,N^FD7891234567890^FS\n^XZ",
+      ppla: "\x02L\nD11\n191100000500050TESTE ARGOX DOSPRINTGO\n1E00000009000507891234567890\nE\n",
+      escpos: "\x1b\x40--------------------------------\n  TESTE IMPRESSORA TERMICA IP\n      DOSPRINTGO - CONSINCO\n--------------------------------\n\n\x1d\x56\x42\x00",
+      custom: "TESTE TEXTO PURO\r\n"
+    };
+
+    function showToast(msg, isError = false) {
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      t.className = 'toast show ' + (isError ? 'error' : 'success');
+      setTimeout(() => t.className = 'toast', 4000);
+    }
+
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config');
+        activeConfig = await res.json();
+        render();
+      } catch (e) {
+        showToast('Erro ao carregar configurações: ' + e.message, true);
+      }
+    }
+
+    function render() {
+      document.getElementById('stat-ports').innerText = activeConfig.mappings.length;
+      document.getElementById('stat-spool').innerText = activeConfig.spool_dir;
+      document.getElementById('stat-config').innerText = activeConfig.config_file || 'config.json';
+
+      const tbody = document.getElementById('table-mappings');
+      if (activeConfig.mappings.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Nenhuma porta configurada. Clique em Adicionar Porta.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = activeConfig.mappings.map((m, idx) => `
+        <tr>
+          <td><span class="tag-port">${m.port}</span></td>
+          <td><span class="tag-tcp">${m.target_type.toUpperCase()}</span></td>
+          <td style="font-family: monospace;">${m.target}</td>
+          <td>${m.description || '-'}</td>
+          <td>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-primary" onclick="openTestModal(${idx})">⚡ Testar</button>
+              <button class="btn btn-sm btn-secondary" onclick="openEditModal(${idx})">✏️ Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteMapping(${idx})">🗑️ Excluir</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openAddModal() {
+      document.getElementById('edit-index').value = '-1';
+      document.getElementById('modal-title').innerText = 'Adicionar Nova Porta';
+      document.getElementById('m-port').value = 'LPT' + (activeConfig.mappings.length + 1);
+      document.getElementById('m-type').value = 'tcp';
+      document.getElementById('m-target').value = '';
+      document.getElementById('m-desc').value = '';
+      document.getElementById('modal-mapping').classList.add('active');
+    }
+
+    function openEditModal(idx) {
+      const m = activeConfig.mappings[idx];
+      document.getElementById('edit-index').value = idx;
+      document.getElementById('modal-title').innerText = 'Editar Porta ' + m.port;
+      document.getElementById('m-port').value = m.port;
+      document.getElementById('m-type').value = m.target_type;
+      document.getElementById('m-target').value = m.target;
+      document.getElementById('m-desc').value = m.description || '';
+      document.getElementById('modal-mapping').classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    async function saveMapping(e) {
+      e.preventDefault();
+      const idx = parseInt(document.getElementById('edit-index').value);
+      const m = {
+        port: document.getElementById('m-port').value.trim().toUpperCase(),
+        target_type: document.getElementById('m-type').value,
+        target: document.getElementById('m-target').value.trim(),
+        description: document.getElementById('m-desc').value.trim(),
+        timeout_ms: 5000,
+        inactivity_ms: 300
+      };
+
+      if (idx === -1) {
+        activeConfig.mappings.push(m);
+      } else {
+        activeConfig.mappings[idx] = m;
+      }
+
+      await persistConfig();
+      closeModal('modal-mapping');
+    }
+
+    async function deleteMapping(idx) {
+      if (!confirm(`Deseja realmente remover o redirecionamento da porta ${activeConfig.mappings[idx].port}?`)) return;
+      activeConfig.mappings.splice(idx, 1);
+      await persistConfig();
+    }
+
+    async function persistConfig() {
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(activeConfig)
+        });
+        const out = await res.json();
+        if (out.success) {
+          showToast('Configurações salvas com sucesso (Viper)!');
+          render();
+        } else {
+          showToast('Erro ao salvar: ' + out.error, true);
+        }
+      } catch (err) {
+        showToast('Erro de rede: ' + err.message, true);
+      }
+    }
+
+    async function reloadService() {
+      try {
+        const res = await fetch('/api/service/restart', { method: 'POST' });
+        const out = await res.json();
+        if (out.success) {
+          showToast('Serviço recarregado com os novos mapeamentos!');
+        } else {
+          showToast('Erro: ' + out.error, true);
+        }
+      } catch (e) {
+        showToast('Erro ao recarregar: ' + e.message, true);
+      }
+    }
+
+    function openTestModal(idx) {
+      const m = activeConfig.mappings[idx];
+      document.getElementById('test-port').value = `${m.port} -> ${m.target} (${m.description || ''})`;
+      document.getElementById('test-port').dataset.port = m.port;
+      
+      // Auto-detect sample type from description or target
+      const desc = (m.description || '').toLowerCase();
+      if (desc.includes('argox') || desc.includes('ppla') || desc.includes('pplb')) {
+        document.getElementById('test-label-type').value = 'ppla';
+      } else if (desc.includes('cupom') || desc.includes('recibo') || desc.includes('escpos')) {
+        document.getElementById('test-label-type').value = 'escpos';
+      } else {
+        document.getElementById('test-label-type').value = 'zpl';
+      }
+      updateSamplePayload();
+      document.getElementById('modal-test').classList.add('active');
+    }
+
+    function updateSamplePayload() {
+      const type = document.getElementById('test-label-type').value;
+      document.getElementById('test-payload').value = samples[type] || '';
+    }
+
+    async function sendTestPrint() {
+      const port = document.getElementById('test-port').dataset.port;
+      const payload = document.getElementById('test-payload').value;
+
+      try {
+        const res = await fetch('/api/test-print', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ port: port, raw_data: payload })
+        });
+        const out = await res.json();
+        if (out.success) {
+          showToast('Etiqueta enviada com sucesso para a impressora!');
+          closeModal('modal-test');
+        } else {
+          showToast('Falha no envio: ' + out.error, true);
+        }
+      } catch (e) {
+        showToast('Erro ao enviar teste: ' + e.message, true);
+      }
+    }
+
+    async function loadServiceStatus() {
+      try {
+        const res = await fetch('/api/service/status');
+        const data = await res.json();
+        const badge = document.getElementById('badge-svc-status');
+        const text = document.getElementById('svc-status-text');
+        const btnGroup = document.getElementById('svc-button-group');
+
+        text.innerText = data.display || data.status;
+
+        if (data.status === 'not_installed') {
+          badge.className = 'badge-status';
+          badge.style.color = '#94a3b8';
+          badge.style.borderColor = 'var(--border)';
+          badge.innerText = '⚪ Não Instalado';
+          btnGroup.innerHTML = `
+            <button class="btn btn-success" onclick="controlService('install')">📦 Instalar como Serviço Windows</button>
+          `;
+        } else if (data.status === 'stopped') {
+          badge.className = 'badge-status';
+          badge.style.color = 'var(--danger)';
+          badge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+          badge.innerText = '🔴 Parado';
+          btnGroup.innerHTML = `
+            <button class="btn btn-success" onclick="controlService('start')">▶️ Iniciar Serviço</button>
+            <button class="btn btn-danger" onclick="controlService('uninstall')">🗑️ Desinstalar Serviço</button>
+          `;
+        } else if (data.status === 'running') {
+          badge.className = 'badge-status';
+          badge.style.color = 'var(--success)';
+          badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+          badge.innerText = '🟢 Em Execução';
+          btnGroup.innerHTML = `
+            <button class="btn btn-secondary" onclick="controlService('restart')">🔄 Reiniciar Serviço</button>
+            <button class="btn btn-danger" onclick="controlService('stop')">⏹️ Parar Serviço</button>
+          `;
+        } else {
+          badge.innerText = data.display || 'Desconhecido';
+          btnGroup.innerHTML = `
+            <button class="btn btn-primary" onclick="controlService('install')">📦 Instalar Serviço</button>
+          `;
+        }
+      } catch (e) {
+        console.error('Erro ao verificar status do serviço:', e);
+      }
+    }
+
+    async function controlService(action) {
+      const btnGroup = document.getElementById('svc-button-group');
+      btnGroup.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">Processando comando...</span>';
+
+      try {
+        const res = await fetch('/api/service/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: action })
+        });
+        const out = await res.json();
+        if (out.success) {
+          showToast(out.message || `Ação '${action}' executada com sucesso!`);
+        } else {
+          showToast(`Erro ao executar '${action}': ` + (out.error || 'Falha desconhecida'), true);
+        }
+      } catch (e) {
+        showToast('Erro de conexão ao controlar serviço: ' + e.message, true);
+      } finally {
+        setTimeout(loadServiceStatus, 1200);
+      }
+    }
+
+    loadConfig();
+    loadServiceStatus();
+    setInterval(loadServiceStatus, 10000);
+  </script>
+</body>
+</html>
