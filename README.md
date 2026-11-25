@@ -2,7 +2,7 @@
 
 Substituto moderno, leve e resiliente em **Go** para o antigo *DOSPrint*. 
 
-Permite que sistemas legados (como o ERP **Consinco / C5**, Clipper, FoxPro, etc.) emitam etiquetas e impressões para portas paralelas **`LPT1` a `LPT9`** (ou `PRN`), interceptando os dados no nível do subsistema Win32 e despachando-os diretamente via **TCP (porta 9100)** para impressoras térmicas de rede (**Zebra ZPL**, **Argox PPLA/PPLB**, **ESC/POS**) ou filas de Spooler do Windows.
+Permite que sistemas legados (como ERPs legados, Clipper, FoxPro, etc.) emitam etiquetas e impressões para portas paralelas **`LPT1` a `LPT9`** (ou `PRN`), interceptando os dados no nível do subsistema Win32 e despachando-os diretamente via **TCP (porta 9100)** para impressoras térmicas de rede (**Zebra ZPL**, **Argox PPLA/PPLB**, **ESC/POS**) ou filas de Spooler do Windows.
 
 ---
 
@@ -16,7 +16,7 @@ Permite que sistemas legados (como o ERP **Consinco / C5**, Clipper, FoxPro, etc
 3. **Painel de Controle Visual (Web GUI Integrado):**
    - Acesse pelo navegador em `http://127.0.0.1:8989`.
    - Adicione, edite ou exclua mapeamentos visualmente com um clique.
-   - **Botão "⚡ Testar"**: Permite enviar etiquetas de teste (**Zebra ZPL**, **Argox PPLA**, **Cupom ESC/POS**) direto para a impressora para validar a comunicação sem precisar abrir o Consinco!
+   - **Botão "⚡ Testar"**: Permite enviar etiquetas de teste (**Zebra ZPL**, **Argox PPLA**, **Cupom ESC/POS**) direto para a impressora para validar a comunicação sem precisar abrir o sistema legado!
 4. **Envio RAW Direto via TCP (Socket 9100):**
    - **Sem drivers:** Não precisa instalar driver no Windows nem criar portas TCP/IP no Painel de Controle.
    - **Sem filas travadas:** Elimina o problema crônico de "Documento pendente" do Spooler do Windows.
@@ -54,7 +54,7 @@ http_port = 8989
 port = "LPT1"
 target_type = "tcp"
 target = "192.168.1.150:9100"
-description = "Zebra ZPL - Etiquetas Gôndola Consinco"
+description = "Zebra ZPL - Etiquetas de Gondola"
 timeout_ms = 5000
 inactivity_ms = 300
 
@@ -134,7 +134,7 @@ Com o `DosPrintGo` rodando, faça um teste enviando um comando direto pelo CMD:
 
 ### Teste Zebra (ZPL na LPT1):
 ```cmd
-echo ^XA^FO50,50^A0N,50,50^FDTESTE ZEBRA CONSINCO^FS^XZ > LPT1:
+echo ^XA^FO50,50^A0N,50,50^FDTESTE ZEBRA DOSPRINT^FS^XZ > LPT1:
 ```
 
 ### Teste Argox (PPLA na LPT2):

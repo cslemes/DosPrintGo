@@ -188,7 +188,7 @@ func (pw *PortWatcher) processJob(expectedSize int64) {
 	jobName := fmt.Sprintf("job_%d_%s.bin", time.Now().UnixNano(), port)
 	jobPath := filepath.Join(filepath.Dir(pw.spoolFile), jobName)
 
-	// Try atomic rename. If the application (Consinco/DOS) still has the file open with write lock,
+	// Try atomic rename. If the application (ERP/DOS) still has the file open with write lock,
 	// rename will fail on Windows and we will retry on the next tick.
 	err := os.Rename(pw.spoolFile, jobPath)
 	if err != nil {

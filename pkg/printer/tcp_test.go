@@ -19,8 +19,8 @@ func TestSendTCPSuccess(t *testing.T) {
 
 	serverAddr := listener.Addr().String()
 
-	// Sample ZPL label data as sent by Consinco
-	sampleZPL := []byte("^XA^FO50,50^A0N,40,40^FDTESTE CONSINCO GO^FS^XZ")
+	// Sample ZPL label data
+	sampleZPL := []byte("^XA^FO50,50^A0N,40,40^FDTESTE DOSPRINTGO^FS^XZ")
 
 	var receivedData bytes.Buffer
 	var wg sync.WaitGroup

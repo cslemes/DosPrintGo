@@ -17,7 +17,7 @@ var (
 		Long: `DosPrintGo emula portas LPT (LPT1 a LPT9) e redireciona os dados de impressão
 para impressoras de rede por IP (Zebra ZPL, Argox PPLA/PPLB, ESC/POS) ou Spooler do Windows.
 
-Projetado especificamente para sistemas ERP como Consinco (C5), Clipper e FoxPro.`,
+Projetado especificamente para sistemas ERP legados, Clipper e FoxPro.`,
 		RunE: runRoot,
 	}
 )

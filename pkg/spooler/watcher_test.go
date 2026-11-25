@@ -78,8 +78,8 @@ func TestSpoolManagerLifecycleAndDispatch(t *testing.T) {
 		t.Fatalf("esperava que SPOOL1.SPL existisse, mas não foi encontrado")
 	}
 
-	// 4. Simulate Consinco ERP writing label data to SPOOL1.SPL
-	expectedZPL := []byte("^XA^FO50,50^FDTESTE_SPOOLER_CONSINCO^FS^XZ")
+	// 4. Simulate ERP writing label data to SPOOL1.SPL
+	expectedZPL := []byte("^XA^FO50,50^FDTESTE_SPOOLER^FS^XZ")
 	err = os.WriteFile(spoolFilePath, expectedZPL, 0666)
 	if err != nil {
 		t.Fatalf("falha ao escrever dados de teste no spool: %v", err)

@@ -45,7 +45,7 @@ func InitViper(configPath string) (*Config, error) {
 			Port:         "LPT1",
 			TargetType:   TargetTCP,
 			Target:       "192.168.1.150:9100",
-			Description:  "Zebra ZPL - Etiquetas Gôndola Consinco",
+			Description:  "Zebra ZPL - Etiquetas de Gondola",
 			TimeoutMs:    5000,
 			InactivityMs: 300,
 		},

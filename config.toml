@@ -8,7 +8,7 @@ http_port = 8989
 port = "LPT1"
 target_type = "tcp"
 target = "192.168.1.150:9100"
-description = "Zebra ZPL - Etiquetas Gôndola Consinco"
+description = "Zebra ZPL - Etiquetas de Gondola"
 timeout_ms = 5000
 inactivity_ms = 300
 
