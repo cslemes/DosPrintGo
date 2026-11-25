@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"math/rand"
 	"net/http"
 	"os/exec"
 	"runtime"
@@ -139,6 +140,23 @@ type testPrintRequest struct {
 	RawData string `json:"raw_data"`
 }
 
+var funnyTestPhrases = []string{
+	"A IMPRESSAO FALHOU! (MENTIRA, FUNCIONOU)",
+	"CRIS E DEMAIS!",
+	"AINDA NAO IMPRIMIU...",
+	"BANCO DE DADOS APAGADO COM SUCESSO!",
+	"ENQUANTO VOCE LE ISSO, O CONSINCO TRAVOU",
+	"REINICIE O MODEM 3 VEZES ANTES DE LER",
+	"FAVOR NAO ALIMENTAR O ESTAGIARIO",
+	"SE ESTA ETIQUETA SAIU, O CAFE ACABOU!",
+	"TESTANDO... 1, 2, 3... CAMBIO!",
+	"FORMATANDO C:\\ EM 5 SEGUNDOS...",
+	"IMPRESSAO AUTORIZADA PELA GERENCIA",
+	"CHAMADO ABERTO COM PRIORIDADE URGENTE",
+	"QUEM MANDOU IMPRIMIR ISSO?",
+	"PARABENS, SUA IMPRESSORA ESTA VIVA!",
+}
+
 func (s *Server) handleTestPrint(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
@@ -170,6 +188,19 @@ func (s *Server) handleTestPrint(w http.ResponseWriter, r *http.Request) {
 	if targetMapping == nil {
 		http.Error(w, fmt.Sprintf(`{"success":false,"error":"Porta %s não encontrada na configuração atual."}`, req.Port), http.StatusNotFound)
 		return
+	}
+
+	if strings.TrimSpace(req.RawData) == "" {
+		phrase := funnyTestPhrases[rand.Intn(len(funnyTestPhrases))]
+		descLower := strings.ToLower(targetMapping.Description)
+		nowStr := time.Now().Format("15:04:05")
+		if strings.Contains(descLower, "argox") || strings.Contains(descLower, "ppla") {
+			req.RawData = fmt.Sprintf("\x02L\nD11\n191100000300040%s\n191100000100020DOSPRINTGO - CONSINCO C5 [%s]\n1E00000006000207891234567890\nE\n", phrase, nowStr)
+		} else if strings.Contains(descLower, "cupom") || strings.Contains(descLower, "recibo") || strings.Contains(descLower, "escpos") {
+			req.RawData = fmt.Sprintf("\x1b\x40--------------------------------\n    DOSPRINTGO - CONSINCO C5\n--------------------------------\n  >> %s <<\n--------------------------------\nHora: %s\nStatus: Porta LPT Operacional!\n\n\x1d\x56\x42\x00", phrase, nowStr)
+		} else {
+			req.RawData = fmt.Sprintf("^XA\n^FO50,40^A0N,32,32^FD%s^FS\n^FO50,85^A0N,22,22^FDDOSPRINTGO - CONSINCO C5 [%s]^FS\n^FO50,125^BY2,2.5,50^BCN,50,Y,N,N^FD7891234567890^FS\n^XZ", phrase, nowStr)
+		}
 	}
 
 	data := []byte(req.RawData)
