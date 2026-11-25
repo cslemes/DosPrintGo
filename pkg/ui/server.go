@@ -1,7 +1,9 @@
 package ui
 
 import (
+	crand "crypto/rand"
 	"embed"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -11,6 +13,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"dosprintgo/pkg/config"
@@ -158,6 +161,39 @@ var funnyTestPhrases = []string{
 	"ESTROVENGA ENGASTALHADA, CHAMAR SUPORTE TECNICO",
 }
 
+var (
+	phraseMu        sync.Mutex
+	lastPhraseIndex = -1
+)
+
+// getRandomPhrase retorna uma frase garantidamente aleatória (alta entropia criptográfica)
+// e impede repetição consecutiva ou em ordem sequencial.
+func getRandomPhrase() string {
+	phraseMu.Lock()
+	defer phraseMu.Unlock()
+
+	n := len(funnyTestPhrases)
+	if n <= 1 {
+		if n == 1 {
+			return funnyTestPhrases[0]
+		}
+		return "TESTE DOSPRINTGO"
+	}
+
+	var b [8]byte
+	_, _ = crand.Read(b[:])
+	seed := time.Now().UnixNano() ^ int64(binary.LittleEndian.Uint64(b[:]))
+	r := rand.New(rand.NewSource(seed))
+
+	idx := r.Intn(n)
+	if idx == lastPhraseIndex {
+		// Evita repetir a mesma frase consecutivamente
+		idx = (idx + 1 + r.Intn(n-1)) % n
+	}
+	lastPhraseIndex = idx
+	return funnyTestPhrases[idx]
+}
+
 func wrapText(text string, maxLen int) []string {
 	words := strings.Fields(text)
 	if len(words) == 0 {
@@ -212,7 +248,7 @@ func (s *Server) handleTestPrint(w http.ResponseWriter, r *http.Request) {
 
 	var phraseUsed string
 	if strings.TrimSpace(req.RawData) == "" {
-		phraseUsed = funnyTestPhrases[rand.Intn(len(funnyTestPhrases))]
+		phraseUsed = getRandomPhrase()
 		descLower := strings.ToLower(targetMapping.Description)
 		nowStr := time.Now().Format("15:04:05")
 		wrapped := wrapText(phraseUsed, 26)

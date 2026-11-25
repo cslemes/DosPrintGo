@@ -363,15 +363,30 @@
       }
     }
 
+    let lastFrontendPhraseIdx = -1;
+
+    function getRandomPhraseIdx(excludeIdx = -1) {
+      if (funnyPhrases.length <= 1) return 0;
+      let randIdx;
+      do {
+        randIdx = Math.floor(Math.random() * funnyPhrases.length);
+      } while (randIdx === excludeIdx);
+      return randIdx;
+    }
+
     function populatePhraseSelect(selectedIdx = 0) {
       const sel = document.getElementById('test-phrase-select');
       sel.innerHTML = funnyPhrases.map((p, i) => `<option value="${i}" ${i === selectedIdx ? 'selected' : ''}>${p}</option>`).join('');
+      sel.value = selectedIdx;
+      lastFrontendPhraseIdx = selectedIdx;
     }
 
     function randomizePhrase() {
-      const randIdx = Math.floor(Math.random() * funnyPhrases.length);
       const sel = document.getElementById('test-phrase-select');
+      const currentIdx = parseInt(sel.value) || 0;
+      const randIdx = getRandomPhraseIdx(currentIdx);
       sel.value = randIdx;
+      lastFrontendPhraseIdx = randIdx;
       updateSamplePayload();
     }
 
@@ -410,8 +425,8 @@
         document.getElementById('test-label-type').value = 'zpl';
       }
 
-      // Sorteia uma frase divertida inicial e preenche o seletor
-      const randomIdx = Math.floor(Math.random() * funnyPhrases.length);
+      // Sorteia uma frase divertida inicial (sempre aleatória, evitando repetição consecutiva)
+      const randomIdx = getRandomPhraseIdx(lastFrontendPhraseIdx);
       populatePhraseSelect(randomIdx);
 
       updateSamplePayload();
