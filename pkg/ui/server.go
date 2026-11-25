@@ -139,8 +139,9 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 type testPrintRequest struct {
-	Port    string `json:"port"`
-	RawData string `json:"raw_data"`
+	Port      string `json:"port"`
+	RawData   string `json:"raw_data"`
+	EasterEgg bool   `json:"easter_egg"`
 }
 
 var funnyTestPhrases = []string{
@@ -248,7 +249,11 @@ func (s *Server) handleTestPrint(w http.ResponseWriter, r *http.Request) {
 
 	var phraseUsed string
 	if strings.TrimSpace(req.RawData) == "" {
-		phraseUsed = getRandomPhrase()
+		if req.EasterEgg {
+			phraseUsed = getRandomPhrase()
+		} else {
+			phraseUsed = "PAGINA DE TESTE DOSPRINTGO PORTA LPT OPERACIONAL"
+		}
 		descLower := strings.ToLower(targetMapping.Description)
 		nowStr := time.Now().Format("15:04:05")
 		wrapped := wrapText(phraseUsed, 26)
@@ -294,14 +299,9 @@ func (s *Server) handleTestPrint(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.logger.Printf("[%s] Impressão teste enviada com sucesso!", targetMapping.Port)
-	respMsg := "Etiqueta teste enviada com sucesso!"
-	if phraseUsed != "" {
-		respMsg = fmt.Sprintf("Impresso: %s", phraseUsed)
-	}
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{
 		"success": true,
-		"phrase":  phraseUsed,
-		"message": respMsg,
+		"message": "Página de teste enviada com sucesso para a impressora!",
 	})
 }
 

@@ -190,20 +190,12 @@
         </select>
       </div>
       <div class="form-group">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-          <label style="margin-bottom: 0;">Frase Engraçada do Teste</label>
-          <button type="button" class="btn btn-sm btn-secondary" onclick="randomizePhrase()" title="Sortear outra frase divertida">🎲 Sortear Frase</button>
-        </div>
-        <select id="test-phrase-select" class="form-control" onchange="onPhraseSelectChange()">
-        </select>
-      </div>
-      <div class="form-group">
         <label>Comando RAW a ser enviado</label>
-        <textarea id="test-payload" class="form-control" rows="5" style="font-family: monospace; font-size: 12px;"></textarea>
+        <textarea id="test-payload" class="form-control" rows="6" style="font-family: monospace; font-size: 12px;"></textarea>
       </div>
       <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
         <button type="button" class="btn btn-secondary" onclick="closeModal('modal-test')">Fechar</button>
-        <button type="button" class="btn btn-primary" onclick="sendTestPrint()">Imprimir Teste Agora</button>
+        <button type="button" class="btn btn-primary" onclick="sendTestPrint(event)">Imprimir Teste Agora</button>
       </div>
     </div>
   </div>
@@ -212,24 +204,6 @@
 
   <script>
     let activeConfig = { mappings: [] };
-
-    const funnyPhrases = [
-      "A IMPRESSAO FALHOU!",
-      "CRIS E DEMAIS!",
-      "AINDA NAO IMPRIMIU...",
-      "BANCO DE DADOS APAGADO COM SUCESSO!",
-      "ENQUANTO VOCE LE ISSO, O SISTEMA TRAVOU",
-      "REINICIE O MODEM 3 VEZES ANTES DE LER",
-      "KKKKKKK, ASHUASHUA, KSKSK",
-      "SE ESTA ETIQUETA SAIU, O CAFE ACABOU!",
-      "TESTANDO... 1, 2, 3... CAMBIO!",
-      "FORMATANDO C:\\ EM 5 SEGUNDOS...",
-      "FOI CULPA DO FARINHA",
-      "JA ABRIU CHAMADO?",
-      "TINTA ACABANDO, FAVOR TROCAR O TONER",
-      "NAO AGUENTO MAIS IMPRIMIR TESTES",
-      "ESTROVENGA ENGASTALHADA, CHAMAR SUPORTE TECNICO"
-    ];
 
     function showToast(msg, isError = false) {
       const t = document.getElementById('toast');
@@ -267,7 +241,7 @@
           <td>${m.description || '-'}</td>
           <td>
             <div class="btn-group">
-              <button class="btn btn-sm btn-primary" onclick="quickRandomTest(${idx})" title="Imprimir frase aleatória imediatamente com 1 clique">⚡ Testar</button>
+              <button class="btn btn-sm btn-primary" onclick="quickRandomTest(event, ${idx})" title="Imprimir página de teste (1 clique)">⚡ Testar</button>
               <button class="btn btn-sm btn-secondary" onclick="openTestModal(${idx})" title="Personalizar comando RAW ou ver código">⚙️ RAW</button>
               <button class="btn btn-sm btn-secondary" onclick="openEditModal(${idx})">✏️ Editar</button>
               <button class="btn btn-sm btn-danger" onclick="deleteMapping(${idx})">🗑️ Excluir</button>
@@ -363,45 +337,19 @@
       }
     }
 
-    let lastFrontendPhraseIdx = -1;
-
-    function getRandomPhraseIdx(excludeIdx = -1) {
-      if (funnyPhrases.length <= 1) return 0;
-      let randIdx;
-      do {
-        randIdx = Math.floor(Math.random() * funnyPhrases.length);
-      } while (randIdx === excludeIdx);
-      return randIdx;
-    }
-
-    function populatePhraseSelect(selectedIdx = 0) {
-      const sel = document.getElementById('test-phrase-select');
-      sel.innerHTML = funnyPhrases.map((p, i) => `<option value="${i}" ${i === selectedIdx ? 'selected' : ''}>${p}</option>`).join('');
-      sel.value = selectedIdx;
-      lastFrontendPhraseIdx = selectedIdx;
-    }
-
-    function randomizePhrase() {
-      const sel = document.getElementById('test-phrase-select');
-      const currentIdx = parseInt(sel.value) || 0;
-      const randIdx = getRandomPhraseIdx(currentIdx);
-      sel.value = randIdx;
-      lastFrontendPhraseIdx = randIdx;
-      updateSamplePayload();
-    }
-
-    async function quickRandomTest(idx) {
+    async function quickRandomTest(event, idx) {
+      const isEasterEgg = !!(event && (event.ctrlKey || event.metaKey));
       const m = activeConfig.mappings[idx];
-      showToast(`⏳ Enviando teste aleatório para ${m.port}...`);
+      showToast(`⏳ Enviando página de teste para ${m.port}...`);
       try {
         const res = await fetch('/api/test-print', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ port: m.port, raw_data: '' })
+          body: JSON.stringify({ port: m.port, raw_data: '', easter_egg: isEasterEgg })
         });
         const out = await res.json();
         if (out.success) {
-          showToast(`⚡ [${m.port}] Imprimindo: "${out.phrase || 'Sucesso'}"`);
+          showToast(`⚡ [${m.port}] Página de teste enviada com sucesso!`);
         } else {
           showToast(`Falha em [${m.port}]: ${out.error}`, true);
         }
@@ -425,79 +373,50 @@
         document.getElementById('test-label-type').value = 'zpl';
       }
 
-      // Sorteia uma frase divertida inicial (sempre aleatória, evitando repetição consecutiva)
-      const randomIdx = getRandomPhraseIdx(lastFrontendPhraseIdx);
-      populatePhraseSelect(randomIdx);
-
       updateSamplePayload();
       document.getElementById('modal-test').classList.add('active');
     }
 
-    function wrapText(text, maxLen = 26) {
-      const words = text.split(/\s+/);
-      if (words.length === 0) return [''];
-      const lines = [];
-      let current = words[0];
-      for (let i = 1; i < words.length; i++) {
-        if ((current + ' ' + words[i]).length <= maxLen) {
-          current += ' ' + words[i];
-        } else {
-          lines.push(current);
-          current = words[i];
-        }
-      }
-      lines.push(current);
-      return lines;
-    }
-
     function updateSamplePayload() {
       const type = document.getElementById('test-label-type').value;
-      const sel = document.getElementById('test-phrase-select');
-      const idx = parseInt(sel.value) || 0;
-      const phrase = funnyPhrases[idx] || "TESTE DOSPRINTGO";
       const nowStr = new Date().toLocaleTimeString('pt-BR');
-      const wrapped = wrapText(phrase, 26);
 
       if (type === 'zpl') {
-        const zplText = wrapped.join('\\&');
         document.getElementById('test-payload').value = 
 `^XA
-^FO30,25^FB500,3,4,L,0^A0N,28,28^FD${zplText}^FS
+^FO30,25^FB500,2,4,L,0^A0N,28,28^FDPAGINA DE TESTE DOSPRINTGO\\&PORTA LPT OPERACIONAL^FS
 ^FO30,115^A0N,20,20^FDDOSPRINTGO - SPOOLER LPT [${nowStr}]^FS
 ^FO30,145^BY2,2.5,45^BCN,45,Y,N,N^FD7891234567890^FS
 ^XZ`;
       } else if (type === 'ppla') {
-        let pplaLines = '';
-        const baseY = 450;
-        wrapped.forEach((line, i) => {
-          const y = String(Math.max(100, baseY - i * 50)).padStart(4, '0');
-          pplaLines += `19110000${y}0030${line}\n`;
-        });
         document.getElementById('test-payload').value = 
 `\x02L
 D11
-${pplaLines}1911000000500020DOSPRINTGO - SPOOLER LPT [${nowStr}]
+1911000004500030PAGINA DE TESTE DOSPRINTGO
+1911000004000030PORTA LPT OPERACIONAL
+1911000000500020DOSPRINTGO - SPOOLER LPT [${nowStr}]
 1E000000003000207891234567890
 E
 `;
       } else if (type === 'escpos') {
-        const escLines = wrapped.join('\n  ');
         document.getElementById('test-payload').value = 
 `\x1b\x40--------------------------------
     DOSPRINTGO - SPOOLER LPT
 --------------------------------
-  ${escLines}
+  PAGINA DE TESTE DOSPRINTGO
+  PORTA LPT OPERACIONAL
 --------------------------------
-Hora do Teste: ${nowStr}
+Hora: ${nowStr}
 Status: Porta LPT Operacional!
 
 \x1d\x56\x42\x00`;
       } else {
-        document.getElementById('test-payload').value = `TESTE: ${wrapped.join(' / ')} [${nowStr}]\r\n`;
+        document.getElementById('test-payload').value = `PAGINA DE TESTE DOSPRINTGO - PORTA LPT OPERACIONAL [${nowStr}]\r\n`;
       }
     }
 
-    async function sendTestPrint() {
+    async function sendTestPrint(event) {
+      const isEasterEgg = !!(event && (event.ctrlKey || event.metaKey));
       const port = document.getElementById('test-port').dataset.port;
       const payload = document.getElementById('test-payload').value;
 
@@ -505,11 +424,11 @@ Status: Porta LPT Operacional!
         const res = await fetch('/api/test-print', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ port: port, raw_data: payload })
+          body: JSON.stringify({ port: port, raw_data: payload, easter_egg: isEasterEgg })
         });
         const out = await res.json();
         if (out.success) {
-          showToast('Etiqueta enviada com sucesso para a impressora!');
+          showToast('Página de teste enviada com sucesso para a impressora!');
           closeModal('modal-test');
         } else {
           showToast('Falha no envio: ' + out.error, true);
