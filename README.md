@@ -141,3 +141,33 @@ echo ^XA^FO50,50^A0N,50,50^FDTESTE ZEBRA CONSINCO^FS^XZ > LPT1:
 ```cmd
 echo ^BL^MD11^M100^M0000^L0000TESTE ARGOX^E > LPT2:
 ```
+
+---
+
+## 🛠️ Compilação e Assinatura Digital (Makefile)
+
+O projeto conta com automação completa via `Makefile` para compilação cruzada (Linux -> Windows), geração de recursos (ícone, manifesto UAC, metadados) e assinatura digital Authenticode:
+
+```bash
+# Compilar recursos, gerar certificado, compilar binários e assinar
+make all
+
+# Ver todos os comandos disponíveis
+make help
+
+# Compilar apenas recursos Windows (.syso)
+make resources
+
+# Compilar executáveis x64 e x86
+make build
+
+# Assinar com Authenticode e Timestamp RFC 3161
+make sign
+
+# Executar testes unitários
+make test
+
+# Limpar binários gerados
+make clean
+```
+
