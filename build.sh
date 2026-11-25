@@ -10,6 +10,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+export PATH="$HOME/.local/bin:$PATH"
+
 SIGN_PFX="${SIGN_PFX:-certs/dosprintgo.pfx}"
 SIGN_PASS="${SIGN_PASS:-dosprintgo}"
 TS_URL="http://timestamp.digicert.com"
