@@ -266,7 +266,8 @@
           <td>${m.description || '-'}</td>
           <td>
             <div class="btn-group">
-              <button class="btn btn-sm btn-primary" onclick="openTestModal(${idx})">⚡ Testar</button>
+              <button class="btn btn-sm btn-primary" onclick="quickRandomTest(${idx})" title="Imprimir frase aleatória imediatamente com 1 clique">⚡ Testar</button>
+              <button class="btn btn-sm btn-secondary" onclick="openTestModal(${idx})" title="Personalizar comando RAW ou ver código">⚙️ RAW</button>
               <button class="btn btn-sm btn-secondary" onclick="openEditModal(${idx})">✏️ Editar</button>
               <button class="btn btn-sm btn-danger" onclick="deleteMapping(${idx})">🗑️ Excluir</button>
             </div>
@@ -373,8 +374,24 @@
       updateSamplePayload();
     }
 
-    function onPhraseSelectChange() {
-      updateSamplePayload();
+    async function quickRandomTest(idx) {
+      const m = activeConfig.mappings[idx];
+      showToast(`⏳ Enviando teste aleatório para ${m.port}...`);
+      try {
+        const res = await fetch('/api/test-print', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ port: m.port, raw_data: '' })
+        });
+        const out = await res.json();
+        if (out.success) {
+          showToast(`⚡ [${m.port}] Imprimindo: "${out.phrase || 'Sucesso'}"`);
+        } else {
+          showToast(`Falha em [${m.port}]: ${out.error}`, true);
+        }
+      } catch (err) {
+        showToast(`Erro de rede: ${err.message}`, true);
+      }
     }
 
     function openTestModal(idx) {

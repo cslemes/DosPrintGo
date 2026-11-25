@@ -190,16 +190,17 @@ func (s *Server) handleTestPrint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var phraseUsed string
 	if strings.TrimSpace(req.RawData) == "" {
-		phrase := funnyTestPhrases[rand.Intn(len(funnyTestPhrases))]
+		phraseUsed = funnyTestPhrases[rand.Intn(len(funnyTestPhrases))]
 		descLower := strings.ToLower(targetMapping.Description)
 		nowStr := time.Now().Format("15:04:05")
 		if strings.Contains(descLower, "argox") || strings.Contains(descLower, "ppla") {
-			req.RawData = fmt.Sprintf("\x02L\nD11\n191100000300040%s\n191100000100020DOSPRINTGO - CONSINCO C5 [%s]\n1E00000006000207891234567890\nE\n", phrase, nowStr)
+			req.RawData = fmt.Sprintf("\x02L\nD11\n191100000300040%s\n191100000100020DOSPRINTGO - CONSINCO C5 [%s]\n1E00000006000207891234567890\nE\n", phraseUsed, nowStr)
 		} else if strings.Contains(descLower, "cupom") || strings.Contains(descLower, "recibo") || strings.Contains(descLower, "escpos") {
-			req.RawData = fmt.Sprintf("\x1b\x40--------------------------------\n    DOSPRINTGO - CONSINCO C5\n--------------------------------\n  >> %s <<\n--------------------------------\nHora: %s\nStatus: Porta LPT Operacional!\n\n\x1d\x56\x42\x00", phrase, nowStr)
+			req.RawData = fmt.Sprintf("\x1b\x40--------------------------------\n    DOSPRINTGO - CONSINCO C5\n--------------------------------\n  >> %s <<\n--------------------------------\nHora: %s\nStatus: Porta LPT Operacional!\n\n\x1d\x56\x42\x00", phraseUsed, nowStr)
 		} else {
-			req.RawData = fmt.Sprintf("^XA\n^FO50,40^A0N,32,32^FD%s^FS\n^FO50,85^A0N,22,22^FDDOSPRINTGO - CONSINCO C5 [%s]^FS\n^FO50,125^BY2,2.5,50^BCN,50,Y,N,N^FD7891234567890^FS\n^XZ", phrase, nowStr)
+			req.RawData = fmt.Sprintf("^XA\n^FO50,40^A0N,32,32^FD%s^FS\n^FO50,85^A0N,22,22^FDDOSPRINTGO - CONSINCO C5 [%s]^FS\n^FO50,125^BY2,2.5,50^BCN,50,Y,N,N^FD7891234567890^FS\n^XZ", phraseUsed, nowStr)
 		}
 	}
 
@@ -224,9 +225,14 @@ func (s *Server) handleTestPrint(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.logger.Printf("[%s] Impressão teste enviada com sucesso!", targetMapping.Port)
+	respMsg := "Etiqueta teste enviada com sucesso!"
+	if phraseUsed != "" {
+		respMsg = fmt.Sprintf("Impresso: %s", phraseUsed)
+	}
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{
 		"success": true,
-		"message": "Etiqueta teste enviada com sucesso para a impressora!",
+		"phrase":  phraseUsed,
+		"message": respMsg,
 	})
 }
 
