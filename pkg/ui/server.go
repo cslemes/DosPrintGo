@@ -155,7 +155,6 @@ var funnyTestPhrases = []string{
 	"DE LONGE VOCE PARECE FEIO, DE PERTO PARECE QUE ESTA LONGE",
 	"TINTA ACABANDO, FAVOR TROCAR O TONER",
 	"PARABENS, SUA IMPRESSORA ESTA VIVA!",
-	"LEMBRANDO QUE NAO PODE TER EMOJIS",
 }
 
 func wrapText(text string, maxLen int) []string {
