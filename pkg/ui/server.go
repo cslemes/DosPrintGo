@@ -158,6 +158,25 @@ var funnyTestPhrases = []string{
 	"LEMBRANDO QUE NAO PODE TER EMOJIS",
 }
 
+func wrapText(text string, maxLen int) []string {
+	words := strings.Fields(text)
+	if len(words) == 0 {
+		return []string{""}
+	}
+	var lines []string
+	current := words[0]
+	for _, word := range words[1:] {
+		if len(current)+1+len(word) <= maxLen {
+			current += " " + word
+		} else {
+			lines = append(lines, current)
+			current = word
+		}
+	}
+	lines = append(lines, current)
+	return lines
+}
+
 func (s *Server) handleTestPrint(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
@@ -196,12 +215,25 @@ func (s *Server) handleTestPrint(w http.ResponseWriter, r *http.Request) {
 		phraseUsed = funnyTestPhrases[rand.Intn(len(funnyTestPhrases))]
 		descLower := strings.ToLower(targetMapping.Description)
 		nowStr := time.Now().Format("15:04:05")
+		wrapped := wrapText(phraseUsed, 26)
+
 		if strings.Contains(descLower, "argox") || strings.Contains(descLower, "ppla") {
-			req.RawData = fmt.Sprintf("\x02L\nD11\n191100000300040%s\n191100000100020DOSPRINTGO - CONSINCO C5 [%s]\n1E00000006000207891234567890\nE\n", phraseUsed, nowStr)
+			var pplaLines string
+			baseY := 450
+			for i, line := range wrapped {
+				y := baseY - (i * 50)
+				if y < 100 {
+					y = 100
+				}
+				pplaLines += fmt.Sprintf("19110000%04d0030%s\n", y, line)
+			}
+			req.RawData = fmt.Sprintf("\x02L\nD11\n%s1911000000500020DOSPRINTGO - CONSINCO C5 [%s]\n1E000000003000207891234567890\nE\n", pplaLines, nowStr)
 		} else if strings.Contains(descLower, "cupom") || strings.Contains(descLower, "recibo") || strings.Contains(descLower, "escpos") {
-			req.RawData = fmt.Sprintf("\x1b\x40--------------------------------\n    DOSPRINTGO - CONSINCO C5\n--------------------------------\n  >> %s <<\n--------------------------------\nHora: %s\nStatus: Porta LPT Operacional!\n\n\x1d\x56\x42\x00", phraseUsed, nowStr)
+			bodyLines := strings.Join(wrapped, "\n  ")
+			req.RawData = fmt.Sprintf("\x1b\x40--------------------------------\n    DOSPRINTGO - CONSINCO C5\n--------------------------------\n  %s\n--------------------------------\nHora: %s\nStatus: Porta LPT Operacional!\n\n\x1d\x56\x42\x00", bodyLines, nowStr)
 		} else {
-			req.RawData = fmt.Sprintf("^XA\n^FO50,40^A0N,32,32^FD%s^FS\n^FO50,85^A0N,22,22^FDDOSPRINTGO - CONSINCO C5 [%s]^FS\n^FO50,125^BY2,2.5,50^BCN,50,Y,N,N^FD7891234567890^FS\n^XZ", phraseUsed, nowStr)
+			zplLines := strings.Join(wrapped, `\&`)
+			req.RawData = fmt.Sprintf("^XA\n^FO30,25^FB500,3,4,L,0^A0N,28,28^FD%s^FS\n^FO30,115^A0N,20,20^FDDOSPRINTGO - CONSINCO C5 [%s]^FS\n^FO30,145^BY2,2.5,45^BCN,45,Y,N,N^FD7891234567890^FS\n^XZ", zplLines, nowStr)
 		}
 	}
 

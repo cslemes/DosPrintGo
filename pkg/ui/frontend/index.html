@@ -418,42 +418,67 @@
       document.getElementById('modal-test').classList.add('active');
     }
 
+    function wrapText(text, maxLen = 26) {
+      const words = text.split(/\s+/);
+      if (words.length === 0) return [''];
+      const lines = [];
+      let current = words[0];
+      for (let i = 1; i < words.length; i++) {
+        if ((current + ' ' + words[i]).length <= maxLen) {
+          current += ' ' + words[i];
+        } else {
+          lines.push(current);
+          current = words[i];
+        }
+      }
+      lines.push(current);
+      return lines;
+    }
+
     function updateSamplePayload() {
       const type = document.getElementById('test-label-type').value;
       const sel = document.getElementById('test-phrase-select');
       const idx = parseInt(sel.value) || 0;
       const phrase = funnyPhrases[idx] || "TESTE DOSPRINTGO";
       const nowStr = new Date().toLocaleTimeString('pt-BR');
+      const wrapped = wrapText(phrase, 26);
 
       if (type === 'zpl') {
+        const zplText = wrapped.join('\\&');
         document.getElementById('test-payload').value = 
 `^XA
-^FO50,40^A0N,32,32^FD${phrase}^FS
-^FO50,85^A0N,22,22^FDDOSPRINTGO - CONSINCO C5 [${nowStr}]^FS
-^FO50,125^BY2,2.5,50^BCN,50,Y,N,N^FD7891234567890^FS
+^FO30,25^FB500,3,4,L,0^A0N,28,28^FD${zplText}^FS
+^FO30,115^A0N,20,20^FDDOSPRINTGO - CONSINCO C5 [${nowStr}]^FS
+^FO30,145^BY2,2.5,45^BCN,45,Y,N,N^FD7891234567890^FS
 ^XZ`;
       } else if (type === 'ppla') {
+        let pplaLines = '';
+        const baseY = 450;
+        wrapped.forEach((line, i) => {
+          const y = String(Math.max(100, baseY - i * 50)).padStart(4, '0');
+          pplaLines += `19110000${y}0030${line}\n`;
+        });
         document.getElementById('test-payload').value = 
 `\x02L
 D11
-191100000300040${phrase}
-191100000100020DOSPRINTGO - CONSINCO C5 [${nowStr}]
-1E00000006000207891234567890
+${pplaLines}1911000000500020DOSPRINTGO - CONSINCO C5 [${nowStr}]
+1E000000003000207891234567890
 E
 `;
       } else if (type === 'escpos') {
+        const escLines = wrapped.join('\n  ');
         document.getElementById('test-payload').value = 
 `\x1b\x40--------------------------------
     DOSPRINTGO - CONSINCO C5
 --------------------------------
-  >> ${phrase} <<
+  ${escLines}
 --------------------------------
 Hora do Teste: ${nowStr}
 Status: Porta LPT Operacional!
 
 \x1d\x56\x42\x00`;
       } else {
-        document.getElementById('test-payload').value = `TESTE: ${phrase} [${nowStr}]\r\n`;
+        document.getElementById('test-payload').value = `TESTE: ${wrapped.join(' / ')} [${nowStr}]\r\n`;
       }
     }
 
