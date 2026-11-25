@@ -155,6 +155,7 @@ var funnyTestPhrases = []string{
 	"DE LONGE VOCE PARECE FEIO, DE PERTO PARECE QUE ESTA LONGE",
 	"TINTA ACABANDO, FAVOR TROCAR O TONER",
 	"PARABENS, SUA IMPRESSORA ESTA VIVA!",
+	"LEMBRANDO QUE NAO PODE TER EMOJIS",
 }
 
 func (s *Server) handleTestPrint(w http.ResponseWriter, r *http.Request) {
