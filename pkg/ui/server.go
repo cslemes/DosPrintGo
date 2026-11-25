@@ -72,6 +72,7 @@ func NewServer(port int, manager *spooler.SpoolManager, logger *log.Logger) *Ser
 	mux.HandleFunc("/api/service/restart", s.handleRestart)
 	mux.HandleFunc("/api/service/status", s.handleServiceStatus)
 	mux.HandleFunc("/api/service/control", s.handleServiceControl)
+	mux.HandleFunc("/api/system/printers", s.handleSystemPrinters)
 
 	s.httpServer = &http.Server{
 		Addr:         fmt.Sprintf("127.0.0.1:%d", port),
@@ -393,6 +394,30 @@ func (s *Server) handleServiceControl(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{
 		"success": true,
 		"message": msg,
+	})
+}
+
+func (s *Server) handleSystemPrinters(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodGet {
+		http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	printers, err := printer.ListInstalledPrinters()
+	if err != nil {
+		s.logger.Printf("Erro ao listar impressoras do sistema: %v", err)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"success":  false,
+			"error":    err.Error(),
+			"printers": []string{},
+		})
+		return
+	}
+
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":  true,
+		"printers": printers,
 	})
 }
 

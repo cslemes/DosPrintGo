@@ -48,6 +48,7 @@
     .btn-group { display: flex; gap: 8px; }
     .tag-port { background: #1e3a8a; color: #93c5fd; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-family: monospace; }
     .tag-tcp { background: #064e3b; color: #6ee7b7; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .tag-win { background: #0c4a6e; color: #7dd3fc; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 100; }
     .modal.active { display: flex; }
     .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 12px; width: 500px; max-width: 95%; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
@@ -148,14 +149,23 @@
         </div>
         <div class="form-group">
           <label>Tipo de Envio</label>
-          <select id="m-type" class="form-control">
+          <select id="m-type" class="form-control" onchange="onMappingTypeChange()">
+            <option value="windows_printer">Fila do Windows (Recomendado - Sem Configurar IP)</option>
             <option value="tcp">TCP Direto (IP:Porta - Padrão 9100)</option>
-            <option value="windows_printer">Spooler do Windows (Nome da Impressora)</option>
           </select>
         </div>
-        <div class="form-group">
-          <label>Destino (Ex: 192.168.1.150:9100 ou Nome da Fila Windows)</label>
-          <input type="text" id="m-target" class="form-control" required placeholder="192.168.1.150:9100">
+        <div class="form-group" id="group-target-windows">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="margin-bottom: 0;">Impressora Instalada no Windows</label>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="loadInstalledPrinters(true)" title="Recarregar lista de impressoras do Windows">🔄 Atualizar</button>
+          </div>
+          <select id="m-target-select" class="form-control" onchange="onPrinterSelectChange()">
+            <option value="">Carregando impressoras...</option>
+          </select>
+        </div>
+        <div class="form-group" id="group-target-tcp" style="display: none;">
+          <label>Endereço IP e Porta (Ex: 192.168.1.150:9100)</label>
+          <input type="text" id="m-target-tcp" class="form-control" placeholder="192.168.1.150:9100">
         </div>
         <div class="form-group">
           <label>Descrição Amigável</label>
@@ -236,8 +246,8 @@
       tbody.innerHTML = activeConfig.mappings.map((m, idx) => `
         <tr>
           <td><span class="tag-port">${m.port}</span></td>
-          <td><span class="tag-tcp">${m.target_type.toUpperCase()}</span></td>
-          <td style="font-family: monospace;">${m.target}</td>
+          <td><span class="${m.target_type === 'windows_printer' ? 'tag-win' : 'tag-tcp'}">${m.target_type === 'windows_printer' ? 'WINDOWS' : 'TCP'}</span></td>
+          <td style="font-family: monospace;">${m.target_type === 'windows_printer' ? '🖨️ ' + m.target : m.target}</td>
           <td>${m.description || '-'}</td>
           <td>
             <div class="btn-group">
@@ -251,13 +261,73 @@
       `).join('');
     }
 
+    let systemPrinters = [];
+
+    async function loadInstalledPrinters(showFeedback = false) {
+      try {
+        const res = await fetch('/api/system/printers');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.printers)) {
+          systemPrinters = data.printers;
+          populatePrintersDropdown();
+          if (showFeedback) {
+            showToast(`Lista atualizada: ${systemPrinters.length} impressoras encontradas.`);
+          }
+        } else {
+          if (showFeedback) showToast('Erro ao listar impressoras: ' + (data.error || 'Desconhecido'), true);
+        }
+      } catch (err) {
+        if (showFeedback) showToast('Erro ao buscar impressoras: ' + err.message, true);
+      }
+    }
+
+    function populatePrintersDropdown(selectedPrinter = '') {
+      const sel = document.getElementById('m-target-select');
+      if (!sel) return;
+      if (systemPrinters.length === 0) {
+        sel.innerHTML = '<option value="">Nenhuma impressora encontrada no Windows</option>';
+        return;
+      }
+      sel.innerHTML = systemPrinters.map(p => 
+        `<option value="${p}" ${p === selectedPrinter ? 'selected' : ''}>${p}</option>`
+      ).join('');
+    }
+
+    function onMappingTypeChange() {
+      const type = document.getElementById('m-type').value;
+      const grpWin = document.getElementById('group-target-windows');
+      const grpTcp = document.getElementById('group-target-tcp');
+
+      if (type === 'windows_printer') {
+        grpWin.style.display = 'block';
+        grpTcp.style.display = 'none';
+        onPrinterSelectChange();
+      } else {
+        grpWin.style.display = 'none';
+        grpTcp.style.display = 'block';
+      }
+    }
+
+    function onPrinterSelectChange() {
+      const type = document.getElementById('m-type').value;
+      if (type === 'windows_printer') {
+        const selected = document.getElementById('m-target-select').value;
+        const desc = document.getElementById('m-desc');
+        if (!desc.value.trim() && selected) {
+          desc.value = selected;
+        }
+      }
+    }
+
     function openAddModal() {
       document.getElementById('edit-index').value = '-1';
       document.getElementById('modal-title').innerText = 'Adicionar Nova Porta';
       document.getElementById('m-port').value = 'LPT' + (activeConfig.mappings.length + 1);
-      document.getElementById('m-type').value = 'tcp';
-      document.getElementById('m-target').value = '';
+      document.getElementById('m-type').value = 'windows_printer';
+      document.getElementById('m-target-tcp').value = '';
       document.getElementById('m-desc').value = '';
+      populatePrintersDropdown();
+      onMappingTypeChange();
       document.getElementById('modal-mapping').classList.add('active');
     }
 
@@ -267,8 +337,16 @@
       document.getElementById('modal-title').innerText = 'Editar Porta ' + m.port;
       document.getElementById('m-port').value = m.port;
       document.getElementById('m-type').value = m.target_type;
-      document.getElementById('m-target').value = m.target;
+      if (m.target_type === 'windows_printer') {
+        populatePrintersDropdown(m.target);
+        document.getElementById('m-target-select').value = m.target;
+        document.getElementById('m-target-tcp').value = '';
+      } else {
+        populatePrintersDropdown();
+        document.getElementById('m-target-tcp').value = m.target;
+      }
       document.getElementById('m-desc').value = m.description || '';
+      onMappingTypeChange();
       document.getElementById('modal-mapping').classList.add('active');
     }
 
@@ -279,10 +357,20 @@
     async function saveMapping(e) {
       e.preventDefault();
       const idx = parseInt(document.getElementById('edit-index').value);
+      const type = document.getElementById('m-type').value;
+      const target = type === 'windows_printer' 
+        ? document.getElementById('m-target-select').value.trim() 
+        : document.getElementById('m-target-tcp').value.trim();
+
+      if (!target) {
+        showToast('Por favor, informe a impressora de destino.', true);
+        return;
+      }
+
       const m = {
         port: document.getElementById('m-port').value.trim().toUpperCase(),
-        target_type: document.getElementById('m-type').value,
-        target: document.getElementById('m-target').value.trim(),
+        target_type: type,
+        target: target,
         description: document.getElementById('m-desc').value.trim(),
         timeout_ms: 5000,
         inactivity_ms: 300
@@ -509,6 +597,7 @@ Status: Porta LPT Operacional!
     }
 
     loadConfig();
+    loadInstalledPrinters();
     loadServiceStatus();
     setInterval(loadServiceStatus, 10000);
   </script>
